@@ -31,3 +31,13 @@ gridNeighborsQ[Vertex[x1_, y1_], Vertex[x2_, y2_]] := Abs[x1 - x2] + Abs[y1 - y2
 
 SquareLattice[{a_, b_}, opts:OptionsPattern[Graph]] :=
   RelationGraph[gridNeighborsQ, ProductVertices[a, b], opts, $baseLatticeTheme]
+
+
+PackageExport["$HexOrigin"]
+
+$HexOrigin = V[0,0,0]
+
+
+PackageExport["$SquareOrigin"]
+
+$SquareOrigin = V[0,0]

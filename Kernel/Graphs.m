@@ -5,10 +5,16 @@ PackageImport["GeneralUtilities`"]
 
 PackageExport["Vertex"]
 
+PackageScope["V"]
+
+V = Vertex;
+
 Vertex::usage = "Vertex[...]";
 
-fmtNum[a_] := If[Negative[a], UnderBar[Abs[a]], a];
-formatPV[args___] := Row[fmtNum /@ {args}, Style["\[CenterDot]", Gray], BaseStyle -> {FontFamily -> "Avenir"}]
+PackageScope["fmtNum"]
+
+fmtNum[a_] := Style[If[Negative[a], UnderBar[Abs[a]], a], FontFamily -> "Avenir"];
+formatPV[args___] := Row[fmtNum /@ {args}, "\[ThinSpace]"];
 
 Format[Vertex[args___], StandardForm] := formatPV[args];
 Format[Vertex[args___], TraditionalForm] := formatPV[args];

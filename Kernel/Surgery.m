@@ -40,21 +40,32 @@ Format[ContractedVertex[v_]] := Column[v];
 
 
 PackageExport["StitchGraphs"]
+PackageExport["VertexCombinerFunction"]
 
-Format[PathVertex[i_], StandardForm] := OverBar[i];
-Format[PathVertex[i_], TraditionalForm] := OverVector[i];
+fmtPathVertex[i_] := OverVector[fmtNum @ i];
 
-StitchGraphs[graphVerticesPairs__] := Scope[
+
+PackageExport["PathVertex"]
+Format[PathVertex[i_], StandardForm] := fmtPathVertex[i];
+Format[PathVertex[i_], TraditionalForm] := fmtPathVertex[i];
+
+Options[StitchGraphs] = {
+  VertexCombinerFunction -> Automatic
+};
+
+StitchGraphs[graphVerticesPairs__, opts:OptionsPattern[]] := Scope[
   graphVerticesPairs = {graphVerticesPairs} /. {g_Graph, gd_Geodesic} :> {g, GeodesicBipath[g, gd]};
   {graphs, bipaths} = Transpose[graphVerticesPairs];
   bipaths = MapIndexed[BipathMap[SubVertex[First[#2]], #]&, bipaths];
   sum = GraphSum[Sequence @@ graphs];
-  StitchPaths[sum, bipaths]
+  StitchPaths[sum, bipaths, opts]
 ]
 
 PackageExport["StitchPaths"]
 
-StitchPaths[graph_Graph, paths_List] := Scope[
+Options[StitchPaths] = Options[StitchGraphs];
+
+StitchPaths[graph_Graph, paths_List, opts:OptionsPattern[]] := Scope[
   paths = paths /. gd_Geodesic :> GeodesicBipath[graph, gd];
   vertexSets = BipathToCycle /@ paths;
   If[!AllSameBy[vertexSets, Length], Return[$Failed]];
@@ -62,7 +73,10 @@ StitchPaths[graph_Graph, paths_List] := Scope[
   firstPath = First[paths]; n = BipathLength[firstPath];
   indices = Mod[Range[n]-1, n, -(n-BipathOffset[firstPath])-1];
   contractedGraph = VertexContract[graph, matchingVertices];
-  renaming = Flatten @ MapThread[Thread[#1 -> PathVertex[#2]]&, {matchingVertices, indices}];
+  combiner = OptionValue[VertexCombinerFunction];
+  SetAutomatic[combiner, PathVertex[#2]&];
+  If[combiner === "First", combiner = First[#1]&];
+  renaming = Flatten @ MapThread[Thread[#1 -> combiner[#1, #2]]&, {matchingVertices, indices}];
   VertexReplace[contractedGraph, renaming, $baseLatticeTheme]
 ]
 
@@ -70,9 +84,9 @@ StitchPaths[graph_Graph, paths_List] := Scope[
 PackageExport["ToVertexSet"]
 
 ToVertexSet[graph_, spec_] := Switch[spec,
-  _Geodesic,  Normal @ GeodesicBipath[graph, spec];
+  _Geodesic,  Normal @ GeodesicBipath[graph, spec],
   _Bipath,    Normal @ spec,
-  _List,      spec
+  _List,      spec,
   _Graph,     VertexList @ spec,
   _,          {spec}
 ];

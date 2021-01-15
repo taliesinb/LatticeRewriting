@@ -15,8 +15,10 @@ PackageExport["GeodesicPath"]
 GeodesicPath[graph_, edge:(_Geodesic | _Rule | _DirectedEdge), maxVertices_:Infinity] := Scope[
   succ = GraphVertexNeighborAssociation[graph];
   path = {prev, curr} = List @@ edge;
+  If[VertexCount[graph, prev] == 0 || VertexCount[graph, curr] || EdgeCount[graph, UndirectedEdge[prev, curr]],
+    Return[{}]];
   While[Length[path] <= maxVertices,
-    nextList = Discard[succ[curr], EqualTo[prev]];
+    nextList = Discard[Lookup[succ, curr, {}], EqualTo[prev]];
     If[nextList === {}, Break[]];
     bestLen = Infinity; bestNext = None;
     Do[
@@ -43,13 +45,13 @@ PackageExport["GeodesicBipath"]
 GeodesicBipath[graph_, Geodesic[a_, b_], maxVertices_:Infinity] := Scope[
   forward = GeodesicPath[graph, a -> b, maxVertices];
   backward = GeodesicPath[graph, b -> a, maxVertices];
-  BipathFromPair[Drop[backward, 2], forward]
+  BipathFromPair[Drop[backward, UpTo[2]], forward]
 ];
 
 GeodesicBipath[graph_, Geodesic[a_, b_, c_], maxVertices_:Infinity] := Scope[
   forward = GeodesicPath[graph, b -> c, maxVertices];
   backward = GeodesicPath[graph, b -> a, maxVertices];
-  BipathFromPair[Drop[backward, 1], forward]
+  BipathFromPair[Drop[backward, UpTo[1]], forward]
 ]
 
 GeodesicBipath[graph_, Geodesic[vertex_], maxVertices_:Infinity] := Scope[
